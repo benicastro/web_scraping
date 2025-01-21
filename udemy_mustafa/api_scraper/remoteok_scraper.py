@@ -56,7 +56,7 @@ def output_jobs_to_excel(jobs):
         print(f"Error writing jobs to Excel: {e}")
 
 # Function to send email
-def send_email(subject, body, to_emails, attachment_path):
+def send_email(subject, body, to_emails, attachment_paths=[]):
     smtp_server = "smtp.gmail.com"
     smtp_port = 465
 
@@ -75,17 +75,19 @@ def send_email(subject, body, to_emails, attachment_path):
 
     msg.attach(MIMEText(body))
 
-    try:
-        with open(attachment_path, "rb") as file:
-            part = MIMEApplication(file.read(), Name=basename(attachment_path))
-        part['Content-Disposition'] = f'attachment; filename="{basename(attachment_path)}"'
-        msg.attach(part)
-    except FileNotFoundError:
-        print(f"Attachment file not found: {attachment_path}")
-        return
-    except Exception as e:
-        print(f"Error attaching file: {e}")
-        return
+    # Attach multiple files
+    for attachment_path in attachment_paths or []:
+        try:
+            with open(attachment_path, "rb") as file:
+                part = MIMEApplication(file.read(), Name=basename(attachment_path))
+            part['Content-Disposition'] = f'attachment; filename="{basename(attachment_path)}"'
+            msg.attach(part)
+        except FileNotFoundError:
+            print(f"Attachment file not found: {attachment_path}")
+            continue
+        except Exception as e:
+            print(f"Error attaching file {attachment_path}: {e}")
+            continue
 
     try:
         with smtplib.SMTP_SSL(smtp_server, smtp_port) as server:
@@ -103,6 +105,6 @@ if __name__ == "__main__":
     send_email(
         subject="RemoteOK Job Postings",
         body="Please find attached the latest job postings from RemoteOK.",
-        to_emails=["benedict.zcastro@gmail.com"],
-        attachment_path="remoteok_jobs.xls"
+        to_emails=["contact_astroc@gmail.com"],
+        attachment_paths=["remoteok_jobs.xls"]
     )
